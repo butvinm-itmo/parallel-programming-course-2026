@@ -13,7 +13,7 @@ from collections import defaultdict
 from pathlib import Path
 
 import matplotlib.pyplot as plt
-from matplotlib.ticker import FuncFormatter
+from matplotlib.ticker import FuncFormatter, LogLocator
 
 SURFACE = "#fcfcfb"
 TEXT_PRIMARY = "#0b0b0b"
@@ -75,6 +75,9 @@ def plot(data, out, linear):
     ax.xaxis.set_minor_locator(plt.NullLocator())
     if not linear:
         ax.set_yscale("log")
+        # The data spans less than a decade, so default log ticks leave one major label and sci-notation minors.
+        ax.yaxis.set_major_locator(LogLocator(base=10, subs=(1, 2, 3, 5)))
+        ax.yaxis.set_minor_locator(plt.NullLocator())
     ax.yaxis.set_major_formatter(FuncFormatter(lambda y, _: f"{y:,.0f}".replace(",", " ") if y >= 1 else f"{y:g}"))
 
     ax.set_xlabel("Число потоков", color=TEXT_SECONDARY)

@@ -1,3 +1,4 @@
+#include "empty_lock_collector.hpp"
 #include "metrics.hpp"
 #include "mutex_collector.hpp"
 #include "single_thread_collector.hpp"
@@ -147,6 +148,7 @@ std::unique_ptr<MetricsCollector> make_collector(Impl impl) {
     case Impl::Mutex:
         return std::make_unique<MutexCollector>();
     case Impl::EmptyLock:
+        return std::make_unique<EmptyLockCollector>();
     case Impl::Striped:
     case Impl::ThreadLocal:
     case Impl::DoubleBuffer:
