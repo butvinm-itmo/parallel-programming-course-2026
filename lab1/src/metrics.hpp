@@ -1,9 +1,13 @@
 #pragma once
 #include <array>
+#include <cstddef>
 #include <cstdint>
 
+constexpr std::size_t bucketsCount = 256;
+constexpr std::size_t bucketWidth = 4;
+
 struct Snapshot {
-    std::array<uint64_t, 256> buckets;
+    std::array<uint64_t, bucketsCount> buckets;
     uint64_t count;
     uint64_t sum;
     uint64_t min;
@@ -19,4 +23,4 @@ class MetricsCollector {
     virtual Snapshot snapshot() = 0;
 };
 
-uint64_t percentile(double p, uint64_t count, const std::array<uint64_t, 256> &buckets);
+uint64_t percentile(double p, uint64_t count, const std::array<uint64_t, bucketsCount> &buckets);
