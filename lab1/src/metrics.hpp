@@ -24,3 +24,5 @@ class MetricsCollector {
 };
 
 uint64_t percentile(double p, uint64_t count, const std::array<uint64_t, bucketsCount> &buckets);
+
+uint64_t next_collector_id();

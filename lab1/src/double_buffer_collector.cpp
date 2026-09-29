@@ -28,20 +28,16 @@ void Buf::merge(const Buf &other) {
     max = std::max(max, other.max);
 }
 
-// thread_local slot outlives collectors, so it has to remember which collector the buffers belong to
-static uint64_t next_collector_id() {
-    static std::atomic<uint64_t> counter{1};
-    return counter.fetch_add(1);
-}
+template <bool Recheck>
+BasicDoubleBufferCollector<Recheck>::BasicDoubleBufferCollector() : id_(next_collector_id()) {}
 
-DoubleBufferCollector::DoubleBufferCollector() : id_(next_collector_id()) {}
-
-ThreadBuffers *DoubleBufferCollector::get_my_buffers() {
-    struct Slot {
+template <bool Recheck>
+ThreadBuffers *BasicDoubleBufferCollector<Recheck>::get_my_buffers() {
+    struct TLSSlot {
         uint64_t id = 0;
         ThreadBuffers *buffers = nullptr;
     };
-    static thread_local Slot slot;
+    static thread_local TLSSlot slot;
 
     if (slot.id != id_) {
         auto buffers = std::make_unique<ThreadBuffers>();
@@ -56,14 +52,18 @@ ThreadBuffers *DoubleBufferCollector::get_my_buffers() {
     return slot.buffers;
 }
 
-void DoubleBufferCollector::record(uint64_t value) {
+template <bool Recheck>
+void BasicDoubleBufferCollector<Recheck>::record(uint64_t value) {
     ThreadBuffers *my = get_my_buffers();
 
     int b;
     while (true) {
         b = active_.load();
         my->inside.store(b);
-        if (active_.load() == b) { 
+        if constexpr (!Recheck) {
+            break;
+        }
+        if (active_.load() == b) {
             break;
         }
         my->inside.store(nowhere, std::memory_order_release);
@@ -80,7 +80,8 @@ void DoubleBufferCollector::record(uint64_t value) {
     my->inside.store(nowhere, std::memory_order_release);
 }
 
-Snapshot DoubleBufferCollector::snapshot() {
+template <bool Recheck>
+Snapshot BasicDoubleBufferCollector<Recheck>::snapshot() {
     std::lock_guard lock(snapMt_);
 
     int old = active_.load();
@@ -107,3 +108,6 @@ Snapshot DoubleBufferCollector::snapshot() {
         .p99 = p99,
     };
 }
+
+template class BasicDoubleBufferCollector<true>;
+template class BasicDoubleBufferCollector<false>;

@@ -29,7 +29,9 @@ struct alignas(128) ThreadBuffers {
     std::array<Buf, 2> bufs;
 };
 
-class DoubleBufferCollector : public MetricsCollector {
+// Recheck = false drops the second active_ check in record(), it is broken on purpose for the stage 4 experiment
+template <bool Recheck>
+class BasicDoubleBufferCollector : public MetricsCollector {
     const uint64_t id_;
     std::atomic<int> active_{0};
     std::mutex snapMt_;
@@ -39,9 +41,12 @@ class DoubleBufferCollector : public MetricsCollector {
     ThreadBuffers *get_my_buffers();
 
   public:
-    DoubleBufferCollector();
+    BasicDoubleBufferCollector();
 
     void record(uint64_t value) override;
 
     Snapshot snapshot() override;
 };
+
+using DoubleBufferCollector = BasicDoubleBufferCollector<true>;
+using NoRecheckDoubleBufferCollector = BasicDoubleBufferCollector<false>;

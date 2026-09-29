@@ -4,6 +4,7 @@
 #include "mutex_collector.hpp"
 #include "single_thread_collector.hpp"
 #include "striped_collector.hpp"
+#include "thread_local_collector.hpp"
 
 #include <algorithm>
 #include <array>
@@ -165,15 +166,17 @@ enum class Impl {
     Striped,
     ThreadLocal,
     DoubleBuffer,
+    DoubleBufferNoRecheck,
 };
 
-constexpr std::array<std::pair<Impl, std::string_view>, 6> implNames{{
+constexpr std::array<std::pair<Impl, std::string_view>, 7> implNames{{
     {Impl::SingleThread, "single_thread"},
     {Impl::EmptyLock, "empty_lock"},
     {Impl::Mutex, "mutex"},
     {Impl::Striped, "striped"},
     {Impl::ThreadLocal, "thread_local"},
     {Impl::DoubleBuffer, "double_buffer"},
+    {Impl::DoubleBufferNoRecheck, "double_buffer_no_recheck"},
 }};
 
 std::optional<Impl> parse_impl(std::string_view name) {
@@ -204,10 +207,12 @@ std::unique_ptr<MetricsCollector> make_collector(Impl impl) {
         return std::make_unique<EmptyLockCollector>();
     case Impl::Striped:
         return std::make_unique<StripedCollector>();
+    case Impl::ThreadLocal:
+        return std::make_unique<ThreadLocalCollector>();
     case Impl::DoubleBuffer:
         return std::make_unique<DoubleBufferCollector>();
-    case Impl::ThreadLocal:
-        return nullptr; // not implemented yet
+    case Impl::DoubleBufferNoRecheck:
+        return std::make_unique<NoRecheckDoubleBufferCollector>();
     }
 }
 
