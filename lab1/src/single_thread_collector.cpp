@@ -10,7 +10,7 @@ void SingleThreadCollector::record(uint64_t value) {
     sum_ += value;
     min_ = std::min(min_, value);
     max_ = std::max(max_, value);
-    uint64_t bucket = std::min<uint64_t>(value / 4, bucketsCount - 1);
+    uint64_t bucket = std::min<uint64_t>(value / bucketWidth, bucketsCount - 1);
     buckets_[bucket]++;
 }
 

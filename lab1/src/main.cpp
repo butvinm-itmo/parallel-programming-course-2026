@@ -2,6 +2,7 @@
 #include "metrics.hpp"
 #include "mutex_collector.hpp"
 #include "single_thread_collector.hpp"
+#include "striped_collector.hpp"
 
 #include <algorithm>
 #include <array>
@@ -150,6 +151,7 @@ std::unique_ptr<MetricsCollector> make_collector(Impl impl) {
     case Impl::EmptyLock:
         return std::make_unique<EmptyLockCollector>();
     case Impl::Striped:
+        return std::make_unique<StripedCollector>();
     case Impl::ThreadLocal:
     case Impl::DoubleBuffer:
         return nullptr; // not implemented yet
