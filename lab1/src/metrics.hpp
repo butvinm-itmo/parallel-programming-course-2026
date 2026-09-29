@@ -18,3 +18,5 @@ class MetricsCollector {
     virtual void record(uint64_t value) = 0;
     virtual Snapshot snapshot() = 0;
 };
+
+uint64_t percentile(double p, uint64_t count, const std::array<uint64_t, 256> &buckets);
