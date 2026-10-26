@@ -15,7 +15,7 @@ void Scheduler::spawn(std::function<void()>) {
     throw std::logic_error("TODO этап 1: Scheduler::spawn");
 }
 
-void Scheduler::run(Strategy&) {
+void Scheduler::run(Strategy &) {
     throw std::logic_error("TODO этап 1: Scheduler::run");
 }
 
@@ -31,4 +31,4 @@ void await(std::function<bool()>) {
     throw std::logic_error("TODO этап 1: sched::await");
 }
 
-}  // namespace sched
+} // namespace sched
