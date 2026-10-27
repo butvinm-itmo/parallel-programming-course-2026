@@ -797,7 +797,7 @@ schedule AABABB -> OVERDRAFT balance=-100 results=true,true
 
   A  lock a  // A захватил лок a
   A  window
-  B  lock b  // B вклинился в окно A и захватил лок b;
+  B  lock b  // B вклинился в окно A и захватил лок b
   B  window
 schedule AB -> DEADLOCK held={a:A, b:B} // A держит лок a и ждёт b, B держит лок b и ждёт a
 ```
@@ -810,13 +810,42 @@ schedule AB -> DEADLOCK held={a:A, b:B} // A держит лок a и ждёт b
 
 #### Этап 5: Bounded
 
-| Программа     | K   | Расписаний | Ошибок | Первая ошибочная трасса | На каком решении вытеснение (для минимального K; нумерация с 1, как в этапе 5) |
-| ------------- | --- | ---------- | ------ | ----------------------- | ------------------------------------------------------------------------------ |
-| `withdraw-v1` | 0   |            |        |                         |                                                                                |
-| `withdraw-v1` | 1   |            |        |                         |                                                                                |
-| `withdraw-v1` | 2   |            |        |                         |                                                                                |
-| `transfer`    | 0   |            |        |                         |                                                                                |
-| `transfer`    | 1   |            |        |                         |                                                                                |
+| Программа     | K   | Расписаний | Ошибок | Первая ошибочная трасса        | На каком решении вытеснение (для минимального K; нумерация с 1, как в этапе 5) |
+| ------------- | --- | ---------- | ------ | ------------------------------ | ------------------------------------------------------------------------------ |
+| `withdraw-v1` | 0   | 2          | 0      |                                |                                                                                |
+| `withdraw-v1` | 1   | 4          | 2      | AABBBBAA -> OVERDRAFT          | 3                                                                              |
+| `withdraw-v1` | 2   | 6          | 4      | AABBAABB -> OVERDRAFT          |                                                                                |
+| `transfer`    | 0   | 2          | 0      |                                |                                                                                |
+| `transfer`    | 1   | 6          | 2      | AB -> DEADLOCK held={a:A, b:B} | 2                                                                              |
+
+**Разбор ошибочной трассы withdraw-v1 при K=1:**
+
+```
+./lab2 withdraw-v1 replay AABBBBAA log
+  A  lock mu
+  A  unlock mu
+  A  window
+  B  lock mu    // вытеснение: A enabled, но выбран B
+  B  unlock mu
+  B  window
+  B  lock mu
+  B  unlock mu
+  A  lock mu   // не вытеснение: B завершился
+  A  unlock mu
+schedule AABBBBAA -> OVERDRAFT balance=-100 results=true,true
+```
+
+**Разбор ошибочной трассы transfer при K=1:**
+
+```
+./lab2 transfer replay AB log
+
+  A  lock a
+  A  window
+  B  lock b  // вытеснение: A enabled, но выбран B
+  B  window
+schedule AB -> DEADLOCK held={a:A, b:B}
+```
 
 ### 3. Результаты этапа 6 (Коллектор)
 
