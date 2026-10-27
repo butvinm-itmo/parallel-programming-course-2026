@@ -49,9 +49,13 @@ struct Replay : Strategy {
 
 // Случайный поток: enabled[rnd() % enabled.size()], rnd — std::mt19937(seed).
 struct RandomPick : Strategy {
-    explicit RandomPick(uint32_t) {}
+    std::mt19937 rnd;
 
-    int pick(const std::vector<int> &, int) override { throw std::logic_error("TODO этап 3: RandomPick::pick"); }
+    explicit RandomPick(uint32_t seed) : rnd(seed) {}
+
+    int pick(const std::vector<int> &enabled, int) override {
+        return enabled[rnd() % enabled.size()];
+    }
 };
 
 // Stateless DFS по дереву выборов: каждый прогон с нуля, повторяет префикс прошлого и берёт следующий вариант.
