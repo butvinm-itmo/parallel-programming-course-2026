@@ -714,10 +714,10 @@ _10 000 вызовов `snapshot()` на фоне 4 пишущих потоко�
 
 Итоговый `count` остаётся верным, потому что `snapshot()` суммирует все зарегистрированные состояния, но каждая запись превращается в аллокацию и захват лока, а список состояний растёт на один элемент на каждую запись.
 
-Воспроизведение: `src/tls_slot_bug.cpp`, один поток пишет по 5 раз в два коллектора `ThreadLocalCollector` поочерёдно и считает, сколько создано `ThreadState`.
+Воспроизведение: `repro/tls_slot_bug.cpp` (вне `src/`, чтобы не попадать в сборку замерялки), один поток пишет по 5 раз в два коллектора `ThreadLocalCollector` поочерёдно и считает, сколько создано `ThreadState`.
 
 ```
-g++ -O2 -std=c++20 -pthread src/tls_slot_bug.cpp $(ls src/*.cpp | grep -v -e main.cpp -e tls_slot_bug.cpp) -o tls_slot
+g++ -O2 -std=c++20 -pthread -Isrc repro/tls_slot_bug.cpp $(ls src/*.cpp | grep -v main.cpp) -o tls_slot
 ./tls_slot
 ```
 

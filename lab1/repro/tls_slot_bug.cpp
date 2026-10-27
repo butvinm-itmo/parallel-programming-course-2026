@@ -1,7 +1,7 @@
 // One thread writes into two collectors in turn.
 // TLSSlot is shared by all instances of ThreadLocalCollector, so every record() creates a new ThreadState.
 //
-// g++ -O2 -std=c++20 -pthread src/tls_slot_bug.cpp $(ls src/*.cpp | grep -v -e main.cpp -e tls_slot_bug.cpp) -o tls_slot
+// g++ -O2 -std=c++20 -pthread -Isrc repro/tls_slot_bug.cpp $(ls src/*.cpp | grep -v main.cpp) -o tls_slot
 
 #include "thread_local_collector.hpp"
 
