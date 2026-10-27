@@ -14,7 +14,9 @@ namespace sched {
 
 // Всегда первый поток из enabled.
 struct FirstAlive : Strategy {
-    int pick(const std::vector<int> &, int) override { throw std::logic_error("TODO этап 1: FirstAlive::pick"); }
+    int pick(const std::vector<int> &enabled, int) override {
+        return enabled[0];
+    }
 };
 
 // Проигрывает трассу: на i-м решении выбирает поток trace[i] ('A' -> 0, 'B' -> 1).

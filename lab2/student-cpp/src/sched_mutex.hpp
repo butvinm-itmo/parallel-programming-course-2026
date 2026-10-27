@@ -4,12 +4,14 @@
 // Лог: "lock <имя>", "unlock <имя>". Планировщик должен знать все локи, чтобы печатать held={a:A, b:B}.
 #include "scheduler.hpp"
 
-#include <stdexcept>
+#include <cassert>
 #include <string>
 
 namespace sched {
 
 class sched_mutex {
+    int owner = -1;
+
   public:
     // Создаётся в setup() тестовой программы; зарегистрируйте лок в планировщике s.
     sched_mutex(Scheduler &s, std::string name) : name(std::move(name)) { (void)s; }
@@ -17,10 +19,21 @@ class sched_mutex {
     sched_mutex(const sched_mutex &) = delete;
 
     // Пауза; если лок занят — ждать, не участвуя в выборе; затем стать владельцем.
-    void lock() { throw std::logic_error("TODO этап 2: sched_mutex::lock"); }
+    void lock() {
+        Scheduler *s = Scheduler::current;
+        s->pause([this] { return owner == -1; });
+        owner = Scheduler::current_id;
+        s->add_log("lock " + name);
+    }
 
     // Пауза; освободить лок, ждавшие потоки снова могут быть выбраны.
-    void unlock() { throw std::logic_error("TODO этап 2: sched_mutex::unlock"); }
+    void unlock() {
+        Scheduler *s = Scheduler::current;
+        s->pause();
+        assert(owner == Scheduler::current_id);
+        owner = -1;
+        s->add_log("unlock " + name);
+    }
 
     const std::string name;
 };

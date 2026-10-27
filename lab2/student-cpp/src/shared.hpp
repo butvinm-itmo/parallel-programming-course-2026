@@ -4,7 +4,6 @@
 // get_acquire/set_release для планировщика ведут себя так же, как get/set.
 #include "scheduler.hpp"
 
-#include <stdexcept>
 #include <string>
 
 namespace sched {
@@ -18,10 +17,25 @@ class shared {
     shared &operator=(const shared &) = delete;
 
     // Чтение с паузой перед ним.
-    T get() { throw std::logic_error("TODO этап 1: shared::get"); }
+    T get() {
+        auto s = Scheduler::current;
+        s->pause();
+        T v = v_;
+        if (s->logging) {
+            s->add_log(name_ + " -> " + std::to_string(v));
+        }
+        return v;
+    }
 
     // Запись с паузой перед ней.
-    void set(T) { throw std::logic_error("TODO этап 1: shared::set"); }
+    void set(T x) {
+        Scheduler *s = Scheduler::current;
+        s->pause();
+        v_ = x;
+        if (s->logging) {
+            s->add_log(name_ + " = " + std::to_string(x));
+        }
+    }
 
     // То же, что get(): планировщик не моделирует порядки памяти.
     T get_acquire() { return get(); }

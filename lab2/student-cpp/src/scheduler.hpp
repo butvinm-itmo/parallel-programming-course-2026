@@ -4,13 +4,30 @@
 // Внутреннее устройство (поля, семафоры, вспомогательные функции для shared и sched_mutex) придумываете сами.
 #include "strategy.hpp"
 
+#include <cstddef>
 #include <functional>
+#include <memory>
+#include <semaphore>
 #include <string>
+#include <thread>
 #include <vector>
 
 namespace sched {
 
+struct Thread {
+    std::thread th;
+    std::binary_semaphore sem{0};
+    std::function<void()> body;
+    bool done{false};
+    std::function<bool()> ready;
+};
+
 class Scheduler {
+    std::binary_semaphore sem{0};
+    std::vector<std::unique_ptr<Thread>> threads;
+    int last = -1;
+    std::string trace;
+
   public:
     Scheduler();
     ~Scheduler();
@@ -20,7 +37,16 @@ class Scheduler {
     void run(Strategy &strategy);
     // Трасса прогона: буквы потоков, выбранных во всех решениях подряд, например "AAAABB".
     std::string trace_string() const;
+    // Добавляет в лог запись с идентификатором текущего потока
+    void add_log(std::string text);
+    // Отдать ход паузы планировщику, ready - функция ожидания готовности потока (например, для lock)
+    void pause(std::function<bool()> ready = nullptr);
 
+
+    // Планировщик текущего потока
+    static thread_local Scheduler *current;
+    // id текущего
+    static thread_local int current_id;
     // Если true, каждая операция с общими данными добавляет строку в log. Выставляет runner.
     bool logging = false;
     // Лог прогона: строки "<поток>  <операция>", например "A  lock mu", "A  balance -> 100".
