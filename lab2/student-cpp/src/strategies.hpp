@@ -4,6 +4,8 @@
 // enabled — номера потоков, которые могут сделать шаг, по возрастанию; last — прошлый выбранный (-1 в начале).
 #include "strategy.hpp"
 
+#include <algorithm>
+#include <cstddef>
 #include <cstdint>
 #include <random>
 #include <stdexcept>
@@ -21,12 +23,28 @@ struct FirstAlive : Strategy {
 
 // Проигрывает трассу: на i-м решении выбирает поток trace[i] ('A' -> 0, 'B' -> 1).
 struct Replay : Strategy {
-    explicit Replay(std::string) {}
+    std::string trace;
+    size_t pos = 0;
+
+    explicit Replay(std::string trace) : trace(std::move(trace)) {}
 
     // Сбросить позицию в трассе перед прогоном.
-    void begin_run() override {}
+    void begin_run() override {
+        pos = 0;
+    }
 
-    int pick(const std::vector<int> &, int) override { throw std::logic_error("TODO этап 2: Replay::pick"); }
+    int pick(const std::vector<int> &enabled, int last) override {
+        if (pos >= trace.size()) {
+            throw std::runtime_error("tried to pick position " + std::to_string(pos) + " in the trace of size " + std::to_string(trace.size()));
+        }
+        int i = trace[pos++] - 'A';
+
+        auto it = std::find(enabled.begin(), enabled.end(), i);
+        if (it == enabled.end()) {
+            throw std::runtime_error("picked thread " + std::string(1, char('A' + i)) + " is not enabled");
+        }
+        return i;
+    }
 };
 
 // Случайный поток: enabled[rnd() % enabled.size()], rnd — std::mt19937(seed).

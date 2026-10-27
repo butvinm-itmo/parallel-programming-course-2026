@@ -14,6 +14,10 @@
 
 namespace sched {
 
+struct Aborted {};
+
+class sched_mutex;
+
 struct Thread {
     std::thread th;
     std::binary_semaphore sem{0};
@@ -42,7 +46,6 @@ class Scheduler {
     // Отдать ход паузы планировщику, ready - функция ожидания готовности потока (например, для lock)
     void pause(std::function<bool()> ready = nullptr);
 
-
     // Планировщик текущего потока
     static thread_local Scheduler *current;
     // id текущего
@@ -53,6 +56,10 @@ class Scheduler {
     std::vector<std::string> log;
     // Пустая строка, если deadlock не было; иначе "held={a:A, b:B}" (этап 2).
     std::string deadlock;
+    // Мьютексы, чтобы перечислить в deadlock
+    std::vector<sched_mutex *> mutexes;
+    // Потоки попали в deadlock
+    bool aborted = false;
 };
 
 // window() из тестовых программ: пауза перед следующей операцией с общими данными обязательна.

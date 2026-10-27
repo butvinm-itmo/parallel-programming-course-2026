@@ -3,7 +3,7 @@
 // Деструктор должен дождаться (join) всех запущенных потоков, в том числе после deadlock.
 #include "scheduler.hpp"
 
-#include <stdexcept>
+#include "sched_mutex.hpp"
 
 namespace sched {
 
@@ -25,16 +25,19 @@ void Scheduler::run(Strategy &strategy) {
         threads[i]->th = std::thread([this, i] {
             current = this;
             current_id = i;
-            threads[i]->body();
+            try {
+                threads[i]->body();
+            } catch (const Aborted &) {
+                return;
+            }
             threads[i]->done = true;
             sem.release();
         });
         sem.acquire();
     }
 
-    bool any_alive = true;
-    while (any_alive) {
-        any_alive = false;
+    while (true) {
+        bool any_alive = false;
 
         std::vector<int> enabled;
         for (int i = 0; i < (int)threads.size(); i++) {
@@ -48,6 +51,9 @@ void Scheduler::run(Strategy &strategy) {
                 enabled.push_back(i);
             }
         }
+        if (!any_alive) {
+            break;
+        }
 
         if (!enabled.empty()) {
             int i = strategy.pick(enabled, last);
@@ -56,7 +62,26 @@ void Scheduler::run(Strategy &strategy) {
             threads[i]->sem.release();
             sem.acquire();
         } else {
-            break; // deadlock
+            // deadlock
+            std::string held;
+            for (auto *m : mutexes) {
+                if (m->owner == -1) {
+                    continue;
+                }
+                if (!held.empty()) {
+                    held += ", ";
+                }
+                held += m->name + ":" + char('A' + m->owner);
+            }
+            deadlock = "held={" + held + "}";
+
+            aborted = true;
+            for (const auto &t : threads) {
+                if (!t->done) {
+                    t->sem.release();
+                }
+            }
+            break;
         }
     }
 
@@ -71,7 +96,6 @@ std::string Scheduler::trace_string() const {
 
 void Scheduler::add_log(std::string text) {
     if (logging) {
-
         const auto label = std::string(1, char('A' + Scheduler::current_id));
         log.push_back(label + "  " + text);
     }
@@ -83,6 +107,9 @@ void Scheduler::pause(std::function<bool()> ready) {
     sem.release();
     t.sem.acquire();
     t.ready = nullptr;
+    if (aborted) {
+        throw Aborted{};
+    }
 }
 
 void point() {

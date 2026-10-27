@@ -10,11 +10,11 @@
 namespace sched {
 
 class sched_mutex {
-    int owner = -1;
-
   public:
     // Создаётся в setup() тестовой программы; зарегистрируйте лок в планировщике s.
-    sched_mutex(Scheduler &s, std::string name) : name(std::move(name)) { (void)s; }
+    sched_mutex(Scheduler &s, std::string name) : name(std::move(name)) {
+        s.mutexes.push_back(this);
+    }
 
     sched_mutex(const sched_mutex &) = delete;
 
@@ -29,6 +29,10 @@ class sched_mutex {
     // Пауза; освободить лок, ждавшие потоки снова могут быть выбраны.
     void unlock() {
         Scheduler *s = Scheduler::current;
+        if (s->aborted) {
+            return;
+        }
+
         s->pause();
         assert(owner == Scheduler::current_id);
         owner = -1;
@@ -36,6 +40,8 @@ class sched_mutex {
     }
 
     const std::string name;
+
+    int owner = -1;
 };
 
 // RAII: lock сейчас, unlock на закрывающей скобке. Выдан готовым.
