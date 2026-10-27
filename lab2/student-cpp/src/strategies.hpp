@@ -33,7 +33,7 @@ struct Replay : Strategy {
         pos = 0;
     }
 
-    int pick(const std::vector<int> &enabled, int last) override {
+    int pick(const std::vector<int> &enabled, int) override {
         if (pos >= trace.size()) {
             throw std::runtime_error("tried to pick position " + std::to_string(pos) + " in the trace of size " + std::to_string(trace.size()));
         }
@@ -61,15 +61,61 @@ struct RandomPick : Strategy {
 // Stateless DFS по дереву выборов: каждый прогон с нуля, повторяет префикс прошлого и берёт следующий вариант.
 // bound — максимум вытеснений (этап 5); для dfs runner передаёт INT_MAX.
 struct Dfs : Strategy {
-    explicit Dfs(int) {}
+    struct Node {
+        std::vector<int> options;
+        size_t chosen = 0;
+    };
+
+    // Путь прошлого прогона, по узлу на каждое решение. Живёт между прогонами.
+    std::vector<Node> path;
+    size_t pos = 0;
+    int bound;
+    int preemptions = 0;
+
+    explicit Dfs(int bound) : bound(bound) {}
 
     // Подготовиться к новому прогону (позиция в пути, счётчик вытеснений).
-    void begin_run() override {}
+    void begin_run() override {
+        pos = 0;
+        preemptions = 0;
+    }
 
-    int pick(const std::vector<int> &, int) override { throw std::logic_error("TODO этап 4: Dfs::pick"); }
+    int pick(const std::vector<int> &enabled, int last) override {
+        bool last_enabled = std::find(enabled.begin(), enabled.end(), last) != enabled.end();
+
+        // Новая развилка: до этого решения ещё не доходили.
+        if (pos == path.size()) {
+            Node node;
+            if (last_enabled && preemptions >= bound) {
+                node.options = {last};
+            } else {
+                node.options = enabled;
+            }
+            path.push_back(node);
+        }
+
+        const Node &node = path[pos];
+        int i = node.options[node.chosen];
+        pos++;
+
+        // Вытеснение: прошлый поток мог продолжить, но выбран другой.
+        if (last_enabled && i != last) {
+            preemptions++;
+        }
+        return i;
+    }
 
     // Выбрать следующий путь; false — дерево обойдено.
-    bool end_run() override { throw std::logic_error("TODO этап 4: Dfs::end_run"); }
+    bool end_run() override {
+        while (!path.empty() && path.back().chosen + 1 == path.back().options.size()) {
+            path.pop_back();
+        }
+        if (path.empty()) {
+            return false;
+        }
+        path.back().chosen++;
+        return true;
+    }
 };
 
 } // namespace sched
