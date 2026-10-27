@@ -694,7 +694,7 @@ mode=volatile samples=2,000,000
 - Процессор (модель, число физических и логических ядер): `Apple M1, 8 физических / 8 логических ядер (4 производительных + 4 энергоэффективных, без SMT), 8 ГБ ОЗУ`
 - Операционная система и версия ядра: `macOS 26.6.2 (25G83), ядро Darwin 25.6.0 (xnu-12377.161.14~5, ARM64)`
 - Версия компилятора / JDK: `Apple clang 21.0.0 (clang-2100.1.1.101); g++ в macOS - это тот же Apple clang`
-- (C++) Предупреждений TSan на командах этапов 2 и 4: `...`
+- (C++) Предупреждений TSan на командах этапов 2 и 4: `0 (withdraw-v1 first, transfer first, transfer replay AB, withdraw-v1 replay AABB, dfs для withdraw-v0/v1/v2 и transfer)`
 - Этапы 1–2: вывод `withdraw-v0 first`, `withdraw-v1 first`, `transfer replay AB` совпал с методичкой (да / нет): `да`
 
 ### 2. Результаты этапов 0–5
